@@ -2,7 +2,7 @@
   "name": "@micosmo/ticker",
   "version": "0.1.0",
   "description": "System for managing processes that are dependent on timer tick events",
-  "main": "index.js",
+  "main": "ticker.js",
   "homepage": ".",
   "repository": {
     "type": "git",
