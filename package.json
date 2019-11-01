@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "description": "System for managing processes that are dependent on timer tick events",
   "main": "ticker.js",
-  "homepage": "https://github.com/micosmogames/toolbox/blob/HEAD/ticker/README.md",
+  "homepage": "https://github.com/micosmogames/ticker/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/micosmogames/toolbox.git",
-    "directory": "ticker"
+    "url": "git+https://github.com/micosmogames/ticker.git"
   },
   "bugs": {
     "email": "micosmogames@gmail.com"
@@ -15,9 +14,17 @@
   "author": "Micosmo",
   "license": "ISC",
   "dependencies": {
-    "@micosmo/core": "^0.2.0"
+    "@micosmo/core": "git+https://github.com/micosmogames/core.git"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-standard": "^13.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "react-scripts": "^3.0.1"
+  },
   "scripts": {},
   "keywords": [
     "aframe",
