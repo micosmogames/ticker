@@ -146,6 +146,8 @@ undefined | The process step has finished.
 * 'isaGeneratorFunction' moved to @micosmo/core/object
 * Updated to core 0.2.0
 * Change array splice to removeIndex
+* Fix to *timer* and *beater* functions to apply delta on the first iteration of the processing loop.
+* Fix to *timer* to handle generator functions that yield a function which causes the timer to be interrupted. Any yielded functions are now wrapped in a sub-timer for the remainder of the timer interval.
 
 ## LICENSE
 

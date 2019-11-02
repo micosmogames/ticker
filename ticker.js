@@ -186,7 +186,6 @@ function validateConfig(fn, cfg, flCfgPassed) {
     if (cfg.onEnd) {
       if (typeof cfg.onEnd !== 'function')
         throw new Error(`micosmo:ticker:${fn}: Invalid 'onEnd' (${typeof cfg.onEnd})`);
-      this.onEnd = cfg.onEnd;
     }
     //    msTimeout: Timeout interval in milliseconds.
     //    sTimeout: Timeout interval in seconds
@@ -225,6 +224,7 @@ function _Process(cfg) {
   Object.assign(this, cfg);
   this.defaultTicker = this.ticker;
   this.onTick = getGeneratorFunction(this.onTick);
+  this.onEnd = cfg.onEnd;
   this.isaProcess = true;
   this.gTickStack = [];
   this.state = {
@@ -402,14 +402,14 @@ function waiter(s, f) {
 }
 
 function sWaiter(s, f) {
-  return msWaiter(s * 1000);
+  return msWaiter(s * 1000, f);
 }
 
 function msWaiter(ms, f) {
   if (typeof ms !== 'number')
     throw new Error(`micosmo:ticker:msWaiter: Invalid parameter`);
   return function * (state) {
-    for (let t = ms; t > 0; t -= state.dt)
+    for (let t = ms - state.dt; t > 0; t -= state.dt)
       yield;
     return f;
   }
@@ -428,26 +428,36 @@ function sTimer(s, f) {
 function msTimer(ms, f) {
   if (typeof ms !== 'number' || typeof f !== 'function')
     throw new Error(`micosmo:ticker:msTimer: Invalid parameter`);
-  return isaGeneratorFunction(f) ? msGenTimer(ms, f) : msFuncTimer(ms, f);
+  return isaGeneratorFunction(f) ? msGenTimer(ms, f, false) : msFuncTimer(ms, f, false);
 }
 
-function msGenTimer(ms, f) {
+function msGenTimer(ms, f, _flSubTimer) {
   return function * (state) {
+    const data = state.data; // Save the input data in case we are a sub-timer.
     const fi = f(state);
-    for (let t = ms; t > 0; t -= state.dt) {
-      state.data = t;
+    for (let t = ms - state.dt; t > 0; t -= state.dt) {
+      state.data = _flSubTimer ? data : t;
       const resp = fi.next();
       if (resp.done)
         return resp.value;
-      yield resp.value;
+      const v = resp.value;
+      if (typeof v === 'function') {
+        // Have to wrap a yielded function in a timer with remaining interval.
+        const tm = state.tm;
+        yield isaGeneratorFunction(v) ? msGenTimer(t, v, true) : msFuncTimer(t, v, true);
+        state.dt = state.tm - tm;
+        continue;
+      }
+      yield v;
     }
   }
 }
 
-function msFuncTimer(ms, f) {
+function msFuncTimer(ms, f, _flSubTimer) {
   return function * (state) {
-    for (let t = ms; t > 0; t -= state.dt) {
-      const resp = f(state.tm, state.dt, t, state.name);
+    const data = state.data; // Save the input data in case we are a sub-timer.
+    for (let t = ms - state.dt; t > 0; t -= state.dt) {
+      const resp = f(state.tm, state.dt, _flSubTimer ? data : t, state.name);
       if (resp === 'more')
         yield
       else
@@ -479,14 +489,16 @@ function _msBeater(ms, f, isInSeconds) {
 function msGenBeater(ms, f, isInSeconds) {
   return function * (state) {
     const fi = f(state);
-    for (let t = 0, it = ms; ; it += ms, t += ms) {
-      for (; it > 0; it -= state.dt)
+    for (let t = 0, it = ms; ; it += ms) {
+      for (it -= state.dt, t += state.dt; it > 0; it -= state.dt, t += state.dt)
         yield;
       state.data = isInSeconds ? Math.trunc(t / 1000) : t;
       const resp = fi.next();
       if (resp.done)
         return resp.value;
+      const tm = state.tm;
       yield resp.value;
+      state.dt = state.tm - tm; // May have yielded a function so will have to adjust the delta.
     }
   }
 }
@@ -494,11 +506,11 @@ function msGenBeater(ms, f, isInSeconds) {
 function msFuncBeater(ms, f, isInSeconds) {
   return function * (state) {
     for (let t = 0, it = ms; ; it += ms) {
-      for (; it > 0; it -= state.dt, t += state.dt)
+      for (it -= state.dt, t += state.dt; it > 0; it -= state.dt, t += state.dt)
         yield;
       const resp = f(state.tm, state.dt, isInSeconds ? Math.trunc(t / 1000) : t, state.name);
       if (resp === 'more')
-        yield
+        yield;
       else
         return resp; // undefined, 'done, 'stop' or chained function
     }
