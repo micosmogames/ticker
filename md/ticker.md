@@ -61,7 +61,8 @@ isAttached() | Returns a boolean indicating if the process is attached to a Tick
 isPaused() | Returns a boolean indicating if the process is currently paused.
 pause() | The process is paused and ignores tick cycles. Returns the process.
 resume() | The process is resumed from a pause. Returns the process.
-start([ticker]) | The process is attached to the *ticker* or if not provided the processes default Ticker and started. Returns the process.
+restart([ticker]) | As for *start* except immediately returns if the process has already been started. Returns the process.
+start([ticker]) | The process is attached to the *ticker* or if not provided the processes default Ticker and started. Throws an exception if the process has already been started. Returns the process.
 stop() | If attached, the process is immediately detached from it's Ticker. If the process has an *onEnd* function then this will be passed a reason code of *stop*. Returns the process. 
 
 ##### PROPERTIES

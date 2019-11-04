@@ -240,6 +240,11 @@ _Process.prototype = {
   start(ticker) {
     if (this.isStarted)
       throw new Error(`micosmo:ticker:process:start: Process '${this.name}' already started`);
+    return this.restart(ticker);
+  },
+  restart(ticker) {
+    if (this.isStarted)
+      return this;
     if (ticker) {
       if (typeof ticker !== 'object' || !ticker.isaTicker)
         throw new Error(`micosmo:ticker:process:start: Invalid ticker parameter`);
